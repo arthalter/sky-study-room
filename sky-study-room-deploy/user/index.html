@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sky Study Room 用户端</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Sky Study Room</p>
+        <h1>自习室预约用户端</h1>
+      </div>
+      <div class="topbar-actions">
+        <div id="userBadge" class="user-badge hidden">
+          <span id="userNameText"></span>
+          <button id="logoutButton" class="ghost-button">退出登录</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="page">
+      <section id="loginPanel" class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">预约闭环</p>
+          <h2>登录后查看资源分类、可预约时段与我的预约</h2>
+          <p class="muted">
+            当前前端已对接你的后端接口：
+            <code>/api/user/login</code>,
+            <code>/api/resource/*</code>,
+            <code>/api/user/reservation/*</code>.
+          </p>
+          <div class="feature-list">
+            <span>分类总览</span>
+            <span>资源详情</span>
+            <span>预约申请</span>
+            <span>状态跟踪</span>
+          </div>
+        </div>
+        <form id="loginForm" class="panel form-panel">
+          <h3>用户登录</h3>
+          <label>
+            用户名
+            <input id="loginName" name="name" placeholder="请输入用户名" required />
+          </label>
+          <label>
+            密码
+            <input id="loginPassword" name="password" type="password" placeholder="请输入密码" required />
+          </label>
+          <button class="primary-button" type="submit">进入系统</button>
+          <p class="tip">后端对 <code>/api/**</code> 启用了 JWT 拦截，所以需要先登录。</p>
+        </form>
+      </section>
+
+      <section id="appPanel" class="hidden">
+        <div class="dashboard-grid">
+          <section class="panel panel-large">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">首页</p>
+                <h2>资源分类总览</h2>
+              </div>
+              <button id="refreshOverviewButton" class="ghost-button">刷新概览</button>
+            </div>
+            <div id="categoryGrid" class="category-grid"></div>
+          </section>
+
+          <aside class="panel panel-side">
+            <p class="eyebrow">筛选条件</p>
+            <h2>查询可预约资源</h2>
+            <div class="filter-grid">
+              <label>
+                资源类型
+                <select id="resourceTypeFilter">
+                  <option value="">全部类型</option>
+                  <option value="PUBLIC_SEAT">公共自习位</option>
+                  <option value="PRIVATE_ROOM">独立自习室</option>
+                  <option value="MEETING_ROOM">讨论室</option>
+                </select>
+              </label>
+              <label>
+                预约日期
+                <input id="reserveDateFilter" type="date" required />
+              </label>
+              <label>
+                开始时间
+                <input id="startTimeFilter" type="time" step="1800" required />
+              </label>
+              <label>
+                结束时间
+                <input id="endTimeFilter" type="time" step="1800" required />
+              </label>
+            </div>
+            <button id="searchButton" class="primary-button">查询资源</button>
+            <p class="tip">列表只返回当前启用且与已通过预约不冲突的资源。</p>
+          </aside>
+        </div>
+
+        <section class="content-grid">
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">列表页</p>
+                <h2>资源列表</h2>
+              </div>
+              <span id="resourceCountText" class="subtle-pill">0 条结果</span>
+            </div>
+            <div id="resourceList" class="stack-list empty-state">
+              <p>登录后选择日期与时间段，即可查看可预约资源。</p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">详情页</p>
+                <h2>资源详情与预约申请</h2>
+              </div>
+            </div>
+            <div id="resourceDetail" class="detail-card empty-state">
+              <p>从左侧选择一个资源，这里会展示详情并支持提交预约。</p>
+            </div>
+          </section>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">我的预约</p>
+              <h2>预约状态跟踪</h2>
+            </div>
+            <div class="reservation-toolbar">
+              <select id="reservationStatusFilter">
+                <option value="">全部状态</option>
+                <option value="1">待审核</option>
+                <option value="2">已通过</option>
+                <option value="3">已拒绝</option>
+                <option value="4">已取消</option>
+              </select>
+              <button id="refreshReservationsButton" class="ghost-button">刷新记录</button>
+            </div>
+          </div>
+          <div id="reservationList" class="stack-list empty-state">
+            <p>这里会显示当前用户的预约记录。</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

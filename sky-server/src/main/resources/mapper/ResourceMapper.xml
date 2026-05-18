@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sky.study.mapper.ResourceMapper">
+
+    <select id="category" resultType="com.sky.study.vo.ResourceCategoryVO">
+        select
+        resource_type as resourceType,
+        count(*) as totalCount,
+        sum(case when status = 1 then 1 else 0 end) as availableCount
+        from resource
+        group by resource_type
+        order by resource_type
+    </select>
+
+    <select id="pageQuery" resultType="com.sky.study.vo.ResourceVO">
+        select
+        id,
+        resource_code,
+        resource_name,
+        resource_type,
+        status,
+        floor,
+        open_time,
+        description,
+        create_time,
+        update_time
+        from resource
+        <where>
+            <if test="resourceName != null and resourceName != ''">
+                and resource_name like concat('%', #{resourceName}, '%')
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                and resource_type = #{resourceType}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by update_time desc
+    </select>
+
+    <select id="list" resultType="com.sky.study.vo.ResourceVO">
+        select
+        r.id,
+        r.resource_code,
+        r.resource_name,
+        r.resource_type,
+        r.status,
+        r.floor,
+        r.open_time,
+        r.description,
+        r.create_time,
+        r.update_time
+        from resource r
+        <where>
+            and r.status = 1
+            <if test="resourceType != null and resourceType != ''">
+                and r.resource_type = #{resourceType}
+            </if>
+            and not exists (
+                select 1
+                from reservation rs
+                where rs.resource_id = r.id
+                  and rs.reserve_date = #{reserveDate}
+                  and rs.status = 2
+                  and rs.start_time &lt; #{endTime}
+                  and rs.end_time &gt; #{startTime}
+            )
+        </where>
+        order by r.update_time desc
+    </select>
+
+    <update id="update" parameterType="com.sky.study.entity.Resource">
+        update resource
+        <set>
+            <if test="resourceCode != null">resource_code = #{resourceCode},</if>
+            <if test="resourceName != null">resource_name = #{resourceName},</if>
+            <if test="resourceType != null">resource_type = #{resourceType},</if>
+            <if test="floor != null">floor = #{floor},</if>
+            <if test="openTime != null">open_time = #{openTime},</if>
+            <if test="description != null">description = #{description},</if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

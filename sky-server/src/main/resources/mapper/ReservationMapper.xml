@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sky.study.mapper.ReservationMapper">
+
+    <select id="pageQueryByUserId" resultType="com.sky.study.vo.ReservationVO">
+        select
+        rs.id,
+        rs.resource_id,
+        r.resource_name,
+        u.username,
+        rs.reserve_date,
+        rs.start_time,
+        rs.end_time,
+        rs.purpose,
+        rs.status,
+        rs.review_remark,
+        rs.create_time,
+        rs.update_time
+        from reservation rs
+        left join resource r on rs.resource_id = r.id
+        left join user u on rs.user_id = u.id
+        <where>
+            rs.user_id = #{userId}
+            <if test="status != null">
+                and rs.status = #{status}
+            </if>
+        </where>
+        order by rs.create_time desc
+    </select>
+
+    <select id="pageQuery" resultType="com.sky.study.vo.ReservationVO">
+        select
+        rs.id,
+        rs.resource_id,
+        r.resource_name,
+        u.username,
+        rs.reserve_date,
+        rs.start_time,
+        rs.end_time,
+        rs.purpose,
+        rs.status,
+        rs.review_remark,
+        rs.create_time,
+        rs.update_time
+        from reservation rs
+        left join resource r on rs.resource_id = r.id
+        left join user u on rs.user_id = u.id
+        <where>
+            <if test="status != null">
+                and rs.status = #{status}
+            </if>
+        </where>
+        order by rs.create_time desc
+    </select>
+
+    <select id="countApprovedConflict" resultType="java.lang.Integer">
+        select count(*)
+        from reservation
+        where resource_id = #{resourceId}
+          and reserve_date = #{reserveDate}
+          and status = 2
+          and start_time &lt; #{endTime}
+          and end_time &gt; #{startTime}
+    </select>
+
+    <update id="update" parameterType="com.sky.study.entity.Reservation">
+        update reservation
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="resourceId != null">resource_id = #{resourceId},</if>
+            <if test="reserveDate != null">reserve_date = #{reserveDate},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="purpose != null">purpose = #{purpose},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="reviewRemark != null">review_remark = #{reviewRemark},</if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

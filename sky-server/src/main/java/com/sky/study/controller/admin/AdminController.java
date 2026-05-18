@@ -1,0 +1,70 @@
+package com.sky.study.controller.admin;
+
+import com.sky.study.constant.MessageConstant;
+import com.sky.study.constant.RoleConstant;
+import com.sky.study.dto.UserDTO;
+import com.sky.study.entity.User;
+import com.sky.study.properties.JwtProperties;
+import com.sky.study.service.UserService;
+import com.sky.study.utils.JwtUtil;
+import com.sky.study.vo.Result;
+import com.sky.study.vo.UserLoginVO;
+import io.jsonwebtoken.Jwt;
+import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.DigestUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/admin")
+@Slf4j
+public class AdminController {
+    @Autowired
+    UserService userService;
+    @Autowired
+    private JwtProperties jwtProperties;
+
+    @PostMapping("/login")
+    public Result<UserLoginVO> login(@RequestBody UserDTO userDTO) {
+        log.info("管理员登录请求: {}", userDTO);
+        User user = userService.findByUsername(userDTO.getName());
+        //检验用户名是否存在
+        if (user == null) {
+            return Result.error(MessageConstant.LOGIN_FAILED);
+        }
+        //检验密码正确性
+        String password = userDTO.getPassword();
+        String md5Password = DigestUtils.md5DigestAsHex(password.getBytes());
+        if (!md5Password.equals(user.getPassword())) {
+            return Result.error(MessageConstant.LOGIN_FAILED);
+        }
+        //检验权限是否正确
+        if (!RoleConstant.ADMIN.equals(user.getRole())) {
+            return Result.error(MessageConstant.NO_PERMISSION);
+        }
+        //登录成功，返回用户信息
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", RoleConstant.ADMIN);
+        claims.put("name", user.getUsername());
+        claims.put("id", user.getId());
+
+        String token = JwtUtil.createJWT(
+                jwtProperties.getSecretKey(),
+                jwtProperties.getTtl(),
+                claims
+        );
+        UserLoginVO userLoginVO = new UserLoginVO();
+        userLoginVO.setToken(token);
+        userLoginVO.setUsername(userDTO.getName());
+        userLoginVO.setRole(RoleConstant.ADMIN);
+        userLoginVO.setId(user.getId());
+        return Result.success(userLoginVO);
+    }
+}
