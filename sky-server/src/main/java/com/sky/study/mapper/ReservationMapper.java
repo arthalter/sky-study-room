@@ -24,6 +24,9 @@ public interface ReservationMapper {
     @Select("select * from reservation where id = #{id}")
     Reservation getById(Long id);
 
+    @Select("select * from reservation where id = #{id} for update")
+    Reservation getByIdForUpdate(Long id);
+
     List<ReservationVO> pageQueryByUserId(@Param("userId") Long userId, @Param("status") Integer status);
 
     List<ReservationVO> pageQuery(@Param("status") Integer status);
