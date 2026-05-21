@@ -26,6 +26,8 @@ dist/
 sky-study-room-deploy/mysql/*
 !sky-study-room-deploy/mysql/init/
 !sky-study-room-deploy/mysql/init/**
+!sky-study-room-deploy/mysql/migration/
+!sky-study-room-deploy/mysql/migration/**
 
 # OS files
 .DS_Store

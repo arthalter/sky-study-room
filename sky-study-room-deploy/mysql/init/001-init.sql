@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS reservation (
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_reservation_user FOREIGN KEY (user_id) REFERENCES user (id),
-    CONSTRAINT fk_reservation_resource FOREIGN KEY (resource_id) REFERENCES resource (id)
+    CONSTRAINT fk_reservation_resource FOREIGN KEY (resource_id) REFERENCES resource (id),
+    KEY idx_reservation_conflict (resource_id, reserve_date, status, start_time, end_time)
 );
 
 INSERT INTO user (username, password, role)
