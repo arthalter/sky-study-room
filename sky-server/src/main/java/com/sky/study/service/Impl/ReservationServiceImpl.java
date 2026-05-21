@@ -98,6 +98,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional
     public void review(ReservationReviewDTO reservationReviewDTO) {
         Reservation reservation = reservationMapper.getById(reservationReviewDTO.getReservationId());
         if (reservation == null) {
