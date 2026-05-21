@@ -20,6 +20,7 @@ import com.sky.study.vo.ResourceVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -34,6 +35,7 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    @Transactional
     public void submit(ReservationSubmitDTO reservationSubmitDTO) {
         if (reservationSubmitDTO.getResourceId() == null) {
             throw new BaseException(MessageConstant.RESOURCE_NOT_FOUND);
