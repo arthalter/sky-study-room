@@ -15,6 +15,8 @@ import com.sky.study.exception.BaseException;
 import com.sky.study.mapper.ReservationAuditLogMapper;
 import com.sky.study.mapper.ReservationMapper;
 import com.sky.study.mapper.ResourceMapper;
+import com.sky.study.mq.ReservationReviewMessagePublisher;
+import com.sky.study.mq.message.ReservationReviewedMessage;
 import com.sky.study.service.ReservationService;
 import com.sky.study.utils.ReservationValidationUtil;
 import com.sky.study.vo.PageResult;
@@ -34,13 +36,16 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationMapper reservationMapper;
     private final ResourceMapper resourceMapper;
     private final ReservationAuditLogMapper reservationAuditLogMapper;
+    private final ReservationReviewMessagePublisher reservationReviewMessagePublisher;
 
     public ReservationServiceImpl(ReservationMapper reservationMapper,
                                   ResourceMapper resourceMapper,
-                                  ReservationAuditLogMapper reservationAuditLogMapper) {
+                                  ReservationAuditLogMapper reservationAuditLogMapper,
+                                  ReservationReviewMessagePublisher reservationReviewMessagePublisher) {
         this.reservationMapper = reservationMapper;
         this.resourceMapper = resourceMapper;
         this.reservationAuditLogMapper = reservationAuditLogMapper;
+        this.reservationReviewMessagePublisher = reservationReviewMessagePublisher;
     }
 
     @Override
@@ -143,6 +148,7 @@ public class ReservationServiceImpl implements ReservationService {
         updateReservation.setReviewRemark(reservationReviewDTO.getReviewRemark());
         reservationMapper.update(updateReservation);
         writeAuditLog(reservation, reservationReviewDTO);
+        publishReviewMessage(reservation, reservationReviewDTO);
     }
 
     @Override
@@ -187,6 +193,15 @@ public class ReservationServiceImpl implements ReservationService {
         auditLog.setNewStatus(reservationReviewDTO.getStatus());
         auditLog.setReviewRemark(reservationReviewDTO.getReviewRemark());
         reservationAuditLogMapper.insert(auditLog);
+    }
+
+    private void publishReviewMessage(Reservation reservation, ReservationReviewDTO reservationReviewDTO) {
+        ReservationReviewedMessage message = new ReservationReviewedMessage();
+        message.setReservationId(reservation.getId());
+        message.setUserId(reservation.getUserId());
+        message.setStatus(reservationReviewDTO.getStatus());
+        message.setReviewRemark(reservationReviewDTO.getReviewRemark());
+        reservationReviewMessagePublisher.publishAfterCommit(message);
     }
 
 }

@@ -2,10 +2,15 @@ package com.sky.study;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sky.study.constant.ReservationStatusConstant;
+import com.sky.study.mq.ReservationReviewMessagePublisher;
+import com.sky.study.mq.ReservationReviewedConsumer;
+import com.sky.study.mq.message.ReservationReviewedMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
@@ -22,8 +27,14 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "spring.rabbitmq.listener.simple.auto-startup=false"
+)
 class SkyServerCoreFlowTests {
 
     private static final String TOKEN_HEADER = "token";
@@ -36,6 +47,10 @@ class SkyServerCoreFlowTests {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    @MockBean
+    private ReservationReviewMessagePublisher reservationReviewMessagePublisher;
+    @Autowired
+    private ReservationReviewedConsumer reservationReviewedConsumer;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +69,22 @@ class SkyServerCoreFlowTests {
                     KEY idx_reservation_audit_log_admin_id (admin_id)
                 )
                 """);
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS notification (
+                    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    user_id BIGINT NOT NULL,
+                    title VARCHAR(128) NOT NULL,
+                    content VARCHAR(512) NOT NULL,
+                    read_status INT NOT NULL DEFAULT 0,
+                    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES user (id),
+                    KEY idx_notification_user_read_time (user_id, read_status, create_time)
+                )
+                """);
+        jdbcTemplate.update("update resource set status = 1, open_time = '08:00-22:00' where id in (1, 2)");
+        jdbcTemplate.update("update resource set status = 1, open_time = '09:00-21:00' where id in (3, 4)");
+        jdbcTemplate.execute("delete from reservation_audit_log");
+        jdbcTemplate.execute("delete from notification");
         stringRedisTemplate.delete("resource:category");
         Set<String> blacklistKeys = stringRedisTemplate.keys("jwt:blacklist:*");
         if (blacklistKeys != null && !blacklistKeys.isEmpty()) {
@@ -142,6 +173,26 @@ class SkyServerCoreFlowTests {
 
         ResponseEntity<String> cancelAgain = exchange("/api/user/reservation/cancel/" + cancelId, HttpMethod.POST, userToken, null);
         assertBusinessError(cancelAgain, "预约状态不合法");
+        verify(reservationReviewMessagePublisher, times(2)).publishAfterCommit(any(ReservationReviewedMessage.class));
+    }
+
+    @Test
+    void reservationReviewedConsumerCreatesUserNotification() throws Exception {
+        String userToken = login("/api/user/login", "student", "123456");
+
+        ReservationReviewedMessage message = new ReservationReviewedMessage();
+        message.setReservationId(10001L);
+        message.setUserId(1L);
+        message.setStatus(ReservationStatusConstant.APPROVED);
+        message.setReviewRemark("approved by consumer test");
+        reservationReviewedConsumer.handle(message);
+
+        ResponseEntity<String> response = exchange("/api/user/notification/page?page=1&pageSize=10", HttpMethod.GET, userToken, null);
+        assertSuccess(response);
+        JsonNode records = objectMapper.readTree(response.getBody()).path("data").path("records");
+        assertThat(records).hasSize(1);
+        assertThat(records.get(0).path("title").asText()).isEqualTo("预约审核通过");
+        assertThat(records.get(0).path("content").asText()).contains("approved by consumer test");
     }
 
     private String login(String path, String name, String password) throws Exception {
