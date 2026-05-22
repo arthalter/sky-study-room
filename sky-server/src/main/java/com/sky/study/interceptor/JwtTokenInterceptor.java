@@ -2,6 +2,7 @@ package com.sky.study.interceptor;
 
 import com.sky.study.context.BaseContext;
 import com.sky.study.properties.JwtProperties;
+import com.sky.study.service.JwtBlacklistService;
 import com.sky.study.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
@@ -17,6 +18,8 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
 
     @Resource
     private JwtProperties jwtProperties;
+    @Resource
+    private JwtBlacklistService jwtBlacklistService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -24,6 +27,10 @@ public class JwtTokenInterceptor implements HandlerInterceptor {
         String token = request.getHeader(jwtProperties.getTokenName());
         String uri = request.getRequestURI();
         if (token == null || token.isEmpty()) {
+            response.setStatus(401);
+            return false;
+        }
+        if (jwtBlacklistService.isBlacklisted(token)) {
             response.setStatus(401);
             return false;
         }

@@ -5,10 +5,12 @@ import com.sky.study.constant.RoleConstant;
 import com.sky.study.dto.UserDTO;
 import com.sky.study.entity.User;
 import com.sky.study.properties.JwtProperties;
+import com.sky.study.service.JwtBlacklistService;
 import com.sky.study.service.UserService;
 import com.sky.study.utils.JwtUtil;
 import com.sky.study.vo.Result;
 import com.sky.study.vo.UserLoginVO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,8 @@ public class AdminController {
     UserService userService;
     @Autowired
     private JwtProperties jwtProperties;
+    @Autowired
+    private JwtBlacklistService jwtBlacklistService;
 
     @PostMapping("/login")
     public Result<UserLoginVO> login(@RequestBody @Valid UserDTO userDTO) {
@@ -65,5 +69,12 @@ public class AdminController {
         userLoginVO.setRole(RoleConstant.ADMIN);
         userLoginVO.setId(user.getId());
         return Result.success(userLoginVO);
+    }
+
+    @PostMapping("/logout")
+    public Result<Void> logout(HttpServletRequest request) {
+        String token = request.getHeader(jwtProperties.getTokenName());
+        jwtBlacklistService.blacklist(token);
+        return Result.success();
     }
 }

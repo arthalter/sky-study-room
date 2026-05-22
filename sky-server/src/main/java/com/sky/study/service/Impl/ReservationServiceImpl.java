@@ -10,7 +10,9 @@ import com.sky.study.dto.ReservationPageQueryDTO;
 import com.sky.study.dto.ReservationReviewDTO;
 import com.sky.study.dto.ReservationSubmitDTO;
 import com.sky.study.entity.Reservation;
+import com.sky.study.entity.ReservationAuditLog;
 import com.sky.study.exception.BaseException;
+import com.sky.study.mapper.ReservationAuditLogMapper;
 import com.sky.study.mapper.ReservationMapper;
 import com.sky.study.mapper.ResourceMapper;
 import com.sky.study.service.ReservationService;
@@ -31,10 +33,14 @@ public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationMapper reservationMapper;
     private final ResourceMapper resourceMapper;
+    private final ReservationAuditLogMapper reservationAuditLogMapper;
 
-    public ReservationServiceImpl(ReservationMapper reservationMapper, ResourceMapper resourceMapper) {
+    public ReservationServiceImpl(ReservationMapper reservationMapper,
+                                  ResourceMapper resourceMapper,
+                                  ReservationAuditLogMapper reservationAuditLogMapper) {
         this.reservationMapper = reservationMapper;
         this.resourceMapper = resourceMapper;
+        this.reservationAuditLogMapper = reservationAuditLogMapper;
     }
 
     @Override
@@ -136,6 +142,7 @@ public class ReservationServiceImpl implements ReservationService {
         updateReservation.setStatus(reservationReviewDTO.getStatus());
         updateReservation.setReviewRemark(reservationReviewDTO.getReviewRemark());
         reservationMapper.update(updateReservation);
+        writeAuditLog(reservation, reservationReviewDTO);
     }
 
     @Override
@@ -170,6 +177,16 @@ public class ReservationServiceImpl implements ReservationService {
                 || ReservationStatusConstant.REJECTED.equals(currentStatus)) {
             throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
         }
+    }
+
+    private void writeAuditLog(Reservation reservation, ReservationReviewDTO reservationReviewDTO) {
+        ReservationAuditLog auditLog = new ReservationAuditLog();
+        auditLog.setReservationId(reservation.getId());
+        auditLog.setAdminId(BaseContext.getCurrentId());
+        auditLog.setOldStatus(reservation.getStatus());
+        auditLog.setNewStatus(reservationReviewDTO.getStatus());
+        auditLog.setReviewRemark(reservationReviewDTO.getReviewRemark());
+        reservationAuditLogMapper.insert(auditLog);
     }
 
 }

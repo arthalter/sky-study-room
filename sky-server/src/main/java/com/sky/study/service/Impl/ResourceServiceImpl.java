@@ -50,6 +50,7 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setStatus(ResourceStatusConstant.ENABLED);
         log.info("resource:{}", resource);
         resourceMapper.insert(resource);
+        evictResourceCategoryCache();
     }
 
     public ResourceVO get(Long id) {
@@ -75,6 +76,7 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setId(id);
         log.info("resource:{}", resource);
         resourceMapper.update(resource);
+        evictResourceCategoryCache();
     }
 
     public void updateStatus(Long id, Integer status) {
@@ -82,6 +84,7 @@ public class ResourceServiceImpl implements ResourceService {
             throw new RuntimeException(RESOURCE_NOT_FOUND);
         }
         resourceMapper.updateStatus(id, status);
+        evictResourceCategoryCache();
     }
 
     public PageResult pageQuery(ResourcePageQueryDTO resourcePageQueryDTO) {
@@ -137,5 +140,10 @@ public class ResourceServiceImpl implements ResourceService {
             return "讨论室";
         }
         return resourceType;
+    }
+
+    private void evictResourceCategoryCache() {
+        stringRedisTemplate.delete(RESOURCE_CATEGORY_CACHE_KEY);
+        log.info("evict resource category cache: key={}", RESOURCE_CATEGORY_CACHE_KEY);
     }
 }
