@@ -36,6 +36,9 @@ public interface ReservationMapper {
                                   @Param("startTime") LocalTime startTime,
                                   @Param("endTime") LocalTime endTime);
 
+    List<Reservation> lockApprovedByResourceAndDate(@Param("resourceId") Long resourceId,
+                                                    @Param("reserveDate") LocalDate reserveDate);
+
     @AutoFill(OperationType.UPDATE)
     void update(Reservation reservation);
 }

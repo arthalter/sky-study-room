@@ -52,7 +52,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 ```bash
 cd ../sky-server
-mvn spring-boot:run
+JWT_SECRET=sky-study-room-dev-secret-key-2026 mvn spring-boot:run
 ```
 
 默认本地后端配置位于 `sky-server/src/main/resources/application.yml`：
@@ -63,6 +63,7 @@ mvn spring-boot:run
 - MySQL 密码：`root`
 - Redis 主机：`localhost`
 - Redis 端口：`6379`
+- JWT 开发密钥：`sky-study-room-dev-secret-key-2026`
 
 开发模式下，Nginx 容器会把 `/api/` 代理到 `http://host.docker.internal:8080`。
 
@@ -170,6 +171,16 @@ docker compose -f docker-compose.dev.yml ps
 ```
 
 完整 Docker 启动模式下，后端会使用 `docker-compose.yml` 中的服务名 `mysql` 和 `redis` 连接依赖服务。
+
+### 登录时报 JWT 密钥长度不足
+
+项目使用 HS256 签发 JWT，密钥长度至少需要 32 字节。本地开发可以通过环境变量指定：
+
+```bash
+JWT_SECRET=sky-study-room-dev-secret-key-2026 mvn spring-boot:run
+```
+
+如果不显式指定，`application.yml` 会使用同样满足长度要求的开发默认值。生产环境应替换为独立的强随机密钥。
 
 ### 前端 API 请求失败
 

@@ -22,6 +22,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @Service
 @Slf4j
 public class ReservationServiceImpl implements ReservationService {
@@ -44,6 +46,9 @@ public class ReservationServiceImpl implements ReservationService {
                 || reservationSubmitDTO.getStartTime() == null
                 || reservationSubmitDTO.getEndTime() == null) {
             throw new BaseException("预约日期和时间不能为空");
+        }
+        if (reservationSubmitDTO.getReserveDate().isBefore(LocalDate.now())) {
+            throw new BaseException("预约日期不能早于今天");
         }
         if (!reservationSubmitDTO.getStartTime().isBefore(reservationSubmitDTO.getEndTime())) {
             throw new BaseException("预约开始时间必须早于结束时间");
@@ -100,19 +105,17 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     @Transactional
     public void review(ReservationReviewDTO reservationReviewDTO) {
-        Reservation reservation = reservationMapper.getById(reservationReviewDTO.getReservationId());
+        Reservation reservation = reservationMapper.getByIdForUpdate(reservationReviewDTO.getReservationId());
         if (reservation == null) {
             throw new BaseException(MessageConstant.RESERVATION_NOT_FOUND);
         }
-        if (!ReservationStatusConstant.PENDING.equals(reservation.getStatus())) {
-            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
-        }
-        if (!ReservationStatusConstant.APPROVED.equals(reservationReviewDTO.getStatus())
-                && !ReservationStatusConstant.REJECTED.equals(reservationReviewDTO.getStatus())) {
-            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
-        }
+        validateReviewStatusTransition(reservation.getStatus(), reservationReviewDTO.getStatus());
 
         if (ReservationStatusConstant.APPROVED.equals(reservationReviewDTO.getStatus())) {
+            reservationMapper.lockApprovedByResourceAndDate(
+                    reservation.getResourceId(),
+                    reservation.getReserveDate()
+            );
             Integer conflictCount = reservationMapper.countApprovedConflict(
                     reservation.getResourceId(),
                     reservation.getReserveDate(),
@@ -140,14 +143,28 @@ public class ReservationServiceImpl implements ReservationService {
         if (!BaseContext.getCurrentId().equals(reservation.getUserId())) {
             throw new BaseException(MessageConstant.NO_PERMISSION);
         }
-        if (ReservationStatusConstant.CANCELED.equals(reservation.getStatus())
-                || ReservationStatusConstant.REJECTED.equals(reservation.getStatus())) {
-            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
-        }
+        validateCancelStatusTransition(reservation.getStatus());
 
         Reservation updateReservation = new Reservation();
         updateReservation.setId(id);
         updateReservation.setStatus(ReservationStatusConstant.CANCELED);
         reservationMapper.update(updateReservation);
+    }
+
+    private void validateReviewStatusTransition(Integer currentStatus, Integer targetStatus) {
+        if (!ReservationStatusConstant.PENDING.equals(currentStatus)) {
+            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
+        }
+        if (!ReservationStatusConstant.APPROVED.equals(targetStatus)
+                && !ReservationStatusConstant.REJECTED.equals(targetStatus)) {
+            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
+        }
+    }
+
+    private void validateCancelStatusTransition(Integer currentStatus) {
+        if (ReservationStatusConstant.CANCELED.equals(currentStatus)
+                || ReservationStatusConstant.REJECTED.equals(currentStatus)) {
+            throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
+        }
     }
 }

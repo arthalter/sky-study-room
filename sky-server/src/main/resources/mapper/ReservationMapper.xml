@@ -65,6 +65,15 @@
           and end_time &gt; #{startTime}
     </select>
 
+    <select id="lockApprovedByResourceAndDate" resultType="com.sky.study.entity.Reservation">
+        select *
+        from reservation
+        where resource_id = #{resourceId}
+          and reserve_date = #{reserveDate}
+          and status = 2
+        for update
+    </select>
+
     <update id="update" parameterType="com.sky.study.entity.Reservation">
         update reservation
         <set>

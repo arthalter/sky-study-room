@@ -29,11 +29,10 @@ mybatis:
 
 sky:
   jwt:
-    secret-key: ${JWT_SECRET:change-me-in-dev}
+    secret-key: ${JWT_SECRET:sky-study-room-dev-secret-key-2026}
     ttl: 7200000
     token-name: token
 springdoc:
   api-docs:
     enabled: true
-
 
