@@ -8,6 +8,7 @@ import com.sky.study.vo.PageResult;
 import com.sky.study.vo.ResourceVO;
 import com.sky.study.vo.Result;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,7 +27,7 @@ public class ResourceController {
     private ResourceService resourceService;
 
     @PostMapping
-    public Result save(@RequestBody ResourceSaveDTO resourceSaveDTO) {
+    public Result save(@RequestBody @Valid ResourceSaveDTO resourceSaveDTO) {
         log.info("资源保存请求: {}", resourceSaveDTO);
         resourceService.save(resourceSaveDTO);
         return Result.success();
@@ -41,14 +42,14 @@ public class ResourceController {
     }
 
     @PutMapping
-    public Result update(@RequestBody ResourceSaveDTO resourceSaveDTO) {
+    public Result update(@RequestBody @Valid ResourceSaveDTO resourceSaveDTO) {
         log.info("资源更新请求: {}", resourceSaveDTO);
         resourceService.update(resourceSaveDTO);
         return Result.success();
     }
 
     @PostMapping("/status")
-    public Result updateStatus(@RequestBody ResourceStatusDTO resourceStatusDTO) {
+    public Result updateStatus(@RequestBody @Valid ResourceStatusDTO resourceStatusDTO) {
         log.info("状态更新请求: {}", resourceStatusDTO);
         resourceService.updateStatus(resourceStatusDTO.getId(), resourceStatusDTO.getStatus());
         return Result.success();

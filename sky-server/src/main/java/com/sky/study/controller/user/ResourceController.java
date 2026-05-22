@@ -6,15 +6,13 @@ import com.sky.study.vo.ResourceCategoryVO;
 import com.sky.study.vo.ResourceVO;
 import com.sky.study.vo.Result;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @RestController("userResourceController")
@@ -31,17 +29,12 @@ public class ResourceController {
     }
 
     @GetMapping("/list")
-    public Result<List<ResourceVO>> list(@RequestParam(required = false) String resourceType,
-                                         @RequestParam LocalDate reserveDate,
-                                         @RequestParam LocalTime startTime,
-                                         @RequestParam LocalTime endTime) {
-        ResourceListQueryDTO resourceListQueryDTO = new ResourceListQueryDTO();
-        resourceListQueryDTO.setResourceType(resourceType);
-        resourceListQueryDTO.setReserveDate(reserveDate);
-        resourceListQueryDTO.setStartTime(startTime);
-        resourceListQueryDTO.setEndTime(endTime);
+    public Result<List<ResourceVO>> list(@Valid ResourceListQueryDTO resourceListQueryDTO) {
         log.info("resource list request: resourceType={}, reserveDate={}, startTime={}, endTime={}",
-                resourceType, reserveDate, startTime, endTime);
+                resourceListQueryDTO.getResourceType(),
+                resourceListQueryDTO.getReserveDate(),
+                resourceListQueryDTO.getStartTime(),
+                resourceListQueryDTO.getEndTime());
         return Result.success(resourceService.list(resourceListQueryDTO));
     }
 

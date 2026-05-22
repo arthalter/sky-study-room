@@ -9,8 +9,7 @@ import com.sky.study.service.UserService;
 import com.sky.study.utils.JwtUtil;
 import com.sky.study.vo.Result;
 import com.sky.study.vo.UserLoginVO;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.Jwts;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.DigestUtils;
@@ -32,7 +31,7 @@ public class AdminController {
     private JwtProperties jwtProperties;
 
     @PostMapping("/login")
-    public Result<UserLoginVO> login(@RequestBody UserDTO userDTO) {
+    public Result<UserLoginVO> login(@RequestBody @Valid UserDTO userDTO) {
         log.info("管理员登录请求: {}", userDTO);
         User user = userService.findByUsername(userDTO.getName());
         //检验用户名是否存在

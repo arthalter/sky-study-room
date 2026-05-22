@@ -6,6 +6,7 @@ import com.sky.study.service.ReservationService;
 import com.sky.study.vo.PageResult;
 import com.sky.study.vo.Result;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +35,7 @@ public class ReservationController {
     }
 
     @PostMapping("/review")
-    public Result review(@RequestBody ReservationReviewDTO reservationReviewDTO) {
+    public Result review(@RequestBody @Valid ReservationReviewDTO reservationReviewDTO) {
         log.info("reservation review request: {}", reservationReviewDTO);
         reservationService.review(reservationReviewDTO);
         return Result.success();

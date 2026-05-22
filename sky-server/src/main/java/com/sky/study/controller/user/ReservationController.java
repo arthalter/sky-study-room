@@ -6,6 +6,7 @@ import com.sky.study.service.ReservationService;
 import com.sky.study.vo.PageResult;
 import com.sky.study.vo.Result;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,7 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping("/submit")
-    public Result submit(@RequestBody ReservationSubmitDTO reservationSubmitDTO) {
+    public Result submit(@RequestBody @Valid ReservationSubmitDTO reservationSubmitDTO) {
         log.info("reservation submit request: {}", reservationSubmitDTO);
         reservationService.submit(reservationSubmitDTO);
         return Result.success();

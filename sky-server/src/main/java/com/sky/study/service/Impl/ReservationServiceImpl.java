@@ -14,6 +14,7 @@ import com.sky.study.exception.BaseException;
 import com.sky.study.mapper.ReservationMapper;
 import com.sky.study.mapper.ResourceMapper;
 import com.sky.study.service.ReservationService;
+import com.sky.study.utils.ReservationValidationUtil;
 import com.sky.study.vo.PageResult;
 import com.sky.study.vo.ReservationVO;
 import com.sky.study.vo.ResourceVO;
@@ -50,9 +51,7 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservationSubmitDTO.getReserveDate().isBefore(LocalDate.now())) {
             throw new BaseException("预约日期不能早于今天");
         }
-        if (!reservationSubmitDTO.getStartTime().isBefore(reservationSubmitDTO.getEndTime())) {
-            throw new BaseException("预约开始时间必须早于结束时间");
-        }
+        ReservationValidationUtil.validateTimeRange(reservationSubmitDTO.getStartTime(), reservationSubmitDTO.getEndTime());
 
         ResourceVO resourceVO = resourceMapper.getById(reservationSubmitDTO.getResourceId());
         if (resourceVO == null) {
@@ -61,6 +60,11 @@ public class ReservationServiceImpl implements ReservationService {
         if (!ResourceStatusConstant.ENABLED.equals(resourceVO.getStatus())) {
             throw new BaseException(MessageConstant.RESOURCE_UNAVAILABLE);
         }
+        ReservationValidationUtil.validateWithinOpenTime(
+                reservationSubmitDTO.getStartTime(),
+                reservationSubmitDTO.getEndTime(),
+                resourceVO.getOpenTime()
+        );
 
         Integer conflictCount = reservationMapper.countApprovedConflict(
                 reservationSubmitDTO.getResourceId(),
@@ -167,4 +171,5 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BaseException(MessageConstant.RESERVATION_STATUS_ERROR);
         }
     }
+
 }
